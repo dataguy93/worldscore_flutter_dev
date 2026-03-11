@@ -9,21 +9,14 @@ Created on Sun Mar  1 15:37:50 2026
 import os
 import base64
 import json
+import hashlib
 from io import BytesIO
-from google import genai
-from google.genai import types
 from PIL import Image, ImageOps
-
-client = genai.Client(
-    api_key=os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY"),
-    http_options={
-        'api_version': '',
-        'base_url': os.environ.get("AI_INTEGRATIONS_GEMINI_BASE_URL")
-    }
-)
 
 MODEL_PRIMARY = "gemini-2.5-flash"
 MODEL_FAST = "gemini-2.5-flash"
+AI_OCR_ENABLED = os.environ.get("OCR_ALLOW_AI", "0").strip().lower() in ("1", "true", "yes")
+CACHE_DIR = os.environ.get("OCR_CACHE_DIR", ".ocr_cache")
 
 SCORECARD_PROMPT = """You are an expert golf scorecard OCR system. Extract every number and name from this golf scorecard photo with extreme precision.
 
@@ -210,6 +203,42 @@ def get_image_media_type(image_path):
     return media_types.get(ext, "image/jpeg")
 
 
+def _ai_ocr_enabled():
+    return AI_OCR_ENABLED
+
+
+def _ensure_cache_dir():
+    os.makedirs(CACHE_DIR, exist_ok=True)
+
+
+def _get_cache_file(image_bytes, stage):
+    digest = hashlib.sha256(image_bytes).hexdigest()
+    return os.path.join(CACHE_DIR, f"{digest}.{stage}.json")
+
+
+def _load_cached_result(image_bytes, stage):
+    path = _get_cache_file(image_bytes, stage)
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save_cached_result(image_bytes, stage, payload):
+    _ensure_cache_dir()
+    path = _get_cache_file(image_bytes, stage)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False)
+
+
+def _load_sidecar_result(image_path):
+    sidecar_path = f"{image_path}.ocr.json"
+    if not os.path.exists(sidecar_path):
+        return None
+    with open(sidecar_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def _parse_json_response(raw_text):
     if raw_text.startswith("```json"):
         raw_text = raw_text[7:]
@@ -273,7 +302,23 @@ def _repair_truncated_json(text):
 
 
 def _call_gemini(prompt_text, image_bytes, media_type, model=None, max_tokens=8192):
+    if not _ai_ocr_enabled():
+        raise RuntimeError(
+            "AI OCR is disabled. Enable by setting OCR_ALLOW_AI=1 or provide cached/sidecar OCR JSON."
+        )
+
+    from google import genai
+    from google.genai import types
     import time as _time
+
+    client = genai.Client(
+        api_key=os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY"),
+        http_options={
+            'api_version': '',
+            'base_url': os.environ.get("AI_INTEGRATIONS_GEMINI_BASE_URL")
+        }
+    )
+
     if model is None:
         model = MODEL_PRIMARY
     last_err = None
@@ -354,17 +399,26 @@ def ocr_scorecard(image_path):
         image_bytes, normalized_media_type = _normalize_image_orientation(image_bytes)
         media_type = normalized_media_type or get_image_media_type(image_path)
 
-        raw_text = _call_gemini(SCORECARD_PROMPT, image_bytes, media_type, model=MODEL_PRIMARY)
-        try:
-            result = _parse_json_response(raw_text)
-        except json.JSONDecodeError:
-            import time as _t0
-            _t0.sleep(3)
-            raw_text = _call_gemini(
-                SCORECARD_PROMPT + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no extra text.",
-                image_bytes, media_type, model=MODEL_PRIMARY
-            )
-            result = _parse_json_response(raw_text)
+        sidecar_result = _load_sidecar_result(image_path)
+        if sidecar_result:
+            result = sidecar_result
+        else:
+            cached_result = _load_cached_result(image_bytes, "initial")
+            if cached_result:
+                result = cached_result
+            else:
+                raw_text = _call_gemini(SCORECARD_PROMPT, image_bytes, media_type, model=MODEL_PRIMARY)
+                try:
+                    result = _parse_json_response(raw_text)
+                except json.JSONDecodeError:
+                    import time as _t0
+                    _t0.sleep(3)
+                    raw_text = _call_gemini(
+                        SCORECARD_PROMPT + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no extra text.",
+                        image_bytes, media_type, model=MODEL_PRIMARY
+                    )
+                    result = _parse_json_response(raw_text)
+                _save_cached_result(image_bytes, "initial", result)
 
         par = result.get("par", [])
         if len(par) != 18:
@@ -605,8 +659,20 @@ def verify_ocr_results(initial_result, image_bytes, media_type):
             extracted_data=json.dumps(extracted_summary, indent=2)
         )
 
-        raw_text = _call_gemini(verify_prompt_filled, image_bytes, media_type, model=MODEL_FAST)
-        verify_result = _parse_json_response(raw_text)
+        cached_verify = _load_cached_result(image_bytes, "verify")
+        if cached_verify:
+            verify_result = cached_verify
+        elif _ai_ocr_enabled():
+            raw_text = _call_gemini(verify_prompt_filled, image_bytes, media_type, model=MODEL_FAST)
+            verify_result = _parse_json_response(raw_text)
+            _save_cached_result(image_bytes, "verify", verify_result)
+        else:
+            if "issues" not in initial_result:
+                initial_result["issues"] = []
+            initial_result["issues"].append(
+                "Verification AI step skipped (OCR_ALLOW_AI is disabled and no cached verify payload was found)."
+            )
+            verify_result = {"verified": False, "corrections": []}
 
         corrections_applied = []
 
@@ -775,7 +841,7 @@ def verify_ocr_results(initial_result, image_bytes, media_type):
                 has_remaining_mismatch = True
                 break
 
-        if has_remaining_mismatch:
+        if has_remaining_mismatch and _ai_ocr_enabled():
             import time as _t2
             _t2.sleep(2)
             initial_result = _targeted_recheck(initial_result, image_bytes, media_type)
@@ -1136,18 +1202,25 @@ def _targeted_recheck(result, image_bytes, media_type):
 
         prompt = TARGETED_RECHECK_PROMPT.format(player_details=player_details)
 
-        raw_text = _call_gemini(prompt, image_bytes, media_type, model=MODEL_PRIMARY)
+        cached_recheck = _load_cached_result(image_bytes, "recheck")
+        if cached_recheck:
+            recheck = cached_recheck
+        elif _ai_ocr_enabled():
+            raw_text = _call_gemini(prompt, image_bytes, media_type, model=MODEL_PRIMARY)
 
-        try:
-            recheck = _parse_json_response(raw_text)
-        except json.JSONDecodeError:
-            import time as _t3
-            _t3.sleep(2)
-            raw_text = _call_gemini(
-                prompt + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no extra text.",
-                image_bytes, media_type, model=MODEL_PRIMARY
-            )
-            recheck = _parse_json_response(raw_text)
+            try:
+                recheck = _parse_json_response(raw_text)
+            except json.JSONDecodeError:
+                import time as _t3
+                _t3.sleep(2)
+                raw_text = _call_gemini(
+                    prompt + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no extra text.",
+                    image_bytes, media_type, model=MODEL_PRIMARY
+                )
+                recheck = _parse_json_response(raw_text)
+            _save_cached_result(image_bytes, "recheck", recheck)
+        else:
+            return result
 
         if "issues" not in result:
             result["issues"] = []
