@@ -176,22 +176,25 @@ class SignInHomePage extends StatelessWidget {
                     tooltip: 'Open menu',
                     onSelected: (value) => _showMenuSelection(context, value),
                     color: const Color(0xFF142234),
+                    position: PopupMenuPosition.under,
+                    offset: const Offset(0, 8),
+                    textStyle: const TextStyle(color: Colors.white),
                     itemBuilder: (context) => const [
                       PopupMenuItem(
                         value: 'Account',
-                        child: Text('Account', style: TextStyle(color: Colors.white)),
+                        child: Text('Account'),
                       ),
                       PopupMenuItem(
                         value: 'Who We Are',
-                        child: Text('Who We Are', style: TextStyle(color: Colors.white)),
+                        child: Text('Who We Are'),
                       ),
                       PopupMenuItem(
                         value: 'FAQ',
-                        child: Text('FAQ', style: TextStyle(color: Colors.white)),
+                        child: Text('FAQ'),
                       ),
                       PopupMenuItem(
                         value: 'Settings',
-                        child: Text('Settings', style: TextStyle(color: Colors.white)),
+                        child: Text('Settings'),
                       ),
                     ],
                     child: Container(
