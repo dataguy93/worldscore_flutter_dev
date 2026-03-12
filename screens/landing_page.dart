@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/branding_widgets.dart';
 import '../widgets/footer_link.dart';
 import 'director_home_page.dart';
-import 'player_sign_in_home_page.dart';
+import 'player_home_page.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
