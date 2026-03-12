@@ -178,23 +178,22 @@ class SignInHomePage extends StatelessWidget {
                     color: const Color(0xFF142234),
                     position: PopupMenuPosition.under,
                     offset: const Offset(0, 8),
-                    textStyle: const TextStyle(color: Colors.white),
                     itemBuilder: (context) => const [
                       PopupMenuItem(
                         value: 'Account',
-                        child: Text('Account'),
+                        child: Text('Account', style: TextStyle(color: Colors.white)),
                       ),
                       PopupMenuItem(
                         value: 'Who We Are',
-                        child: Text('Who We Are'),
+                        child: Text('Who We Are', style: TextStyle(color: Colors.white)),
                       ),
                       PopupMenuItem(
                         value: 'FAQ',
-                        child: Text('FAQ'),
+                        child: Text('FAQ', style: TextStyle(color: Colors.white)),
                       ),
                       PopupMenuItem(
                         value: 'Settings',
-                        child: Text('Settings'),
+                        child: Text('Settings', style: TextStyle(color: Colors.white)),
                       ),
                     ],
                     child: Container(
