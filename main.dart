@@ -701,7 +701,7 @@ class _ActiveTournamentSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Active Tournaments',
+            'Active Tournament',
             style: TextStyle(
               color: Color(0xFF4FC3F7),
               fontSize: 18,
