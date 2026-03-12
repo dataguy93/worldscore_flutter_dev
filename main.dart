@@ -588,9 +588,16 @@ class SignInHomePage extends StatelessWidget {
                       const SizedBox(height: 20),
                       const _DirectorOverviewCard(),
                       const SizedBox(height: 20),
-                      const _MenuCard(
+                      _MenuCard(
                         label: 'Leaderboard',
                         subtitle: 'View current and former tournament leaderboards.',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const TournamentResultsPage(),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 14),
                       const _MenuCard(
@@ -623,6 +630,111 @@ class SignInHomePage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class TournamentResultsPage extends StatelessWidget {
+  const TournamentResultsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D1B2A),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF142234),
+        foregroundColor: Colors.white,
+        title: const Text('Tournament Results'),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _TournamentSection(
+                title: 'Active Tournaments',
+                tournaments: [
+                  'Spring Invitational - Pebble Ridge GC',
+                  'City Match Play Championship',
+                  'WorldScore Open Qualifier',
+                ],
+              ),
+              SizedBox(height: 20),
+              _TournamentSection(
+                title: 'Previous Tournaments',
+                tournaments: [
+                  'Winter Classic - Final Results',
+                  'Autumn Member Cup - Final Results',
+                  'Summer Pro-Am - Final Results',
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TournamentSection extends StatelessWidget {
+  final String title;
+  final List<String> tournaments;
+
+  const _TournamentSection({required this.title, required this.tournaments});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF142234),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF1F3A56)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF4FC3F7),
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...tournaments.map(
+            (tournament) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 5),
+                    child: Icon(
+                      Icons.circle,
+                      color: Color(0xFF9FB3C8),
+                      size: 8,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      tournament,
+                      style: const TextStyle(
+                        color: Color(0xFFD6E3F0),
+                        fontSize: 14,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -696,40 +808,48 @@ class _DirectorInfoRow extends StatelessWidget {
 class _MenuCard extends StatelessWidget {
   final String label;
   final String subtitle;
+  final VoidCallback? onTap;
 
-  const _MenuCard({required this.label, required this.subtitle});
+  const _MenuCard({required this.label, required this.subtitle, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF142234),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1F3A56)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF4FC3F7),
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF142234),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF1F3A56)),
           ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Color(0xFF9FB3C8),
-              fontSize: 13,
-              height: 1.4,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF4FC3F7),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Color(0xFF9FB3C8),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
