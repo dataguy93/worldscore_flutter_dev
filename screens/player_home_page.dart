@@ -24,16 +24,15 @@ class PlayerSignInHomePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF0D1B2A),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 22.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 22.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight - 44),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                       Row(
                         children: [
                           Expanded(
@@ -131,21 +130,20 @@ class PlayerSignInHomePage extends StatelessWidget {
                         label: 'Upload',
                         subtitle: 'Submit a new scorecard using AI OCR.',
                       ),
-                    ],
-                  ),
+                    const SizedBox(height: 28),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        FooterLink(label: 'How It Works', onTap: () {}),
+                        FooterLink(label: 'Help & Support', onTap: () {}),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
               ),
-              const SizedBox(height: 28),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  FooterLink(label: 'How It Works', onTap: () {}),
-                  FooterLink(label: 'Help & Support', onTap: () {}),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
