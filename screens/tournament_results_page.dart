@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'full_leaderboard_page.dart';
 import 'leaderboard_dummy_data.dart';
 
 class TournamentResultsPage extends StatelessWidget {
@@ -91,11 +92,11 @@ class _ActiveTournamentSection extends StatelessWidget {
             alignment: Alignment.center,
             child: TextButton(
               onPressed: () {
-                ScaffoldMessenger.of(context)
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(
-                    const SnackBar(content: Text('Full leaderboard coming soon.')),
-                  );
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const FullLeaderboardPage(),
+                  ),
+                );
               },
               child: const Text(
                 'See Full Leaderboard',
