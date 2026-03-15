@@ -150,9 +150,14 @@ class SignInHomePage extends StatelessWidget {
                         subtitle: 'Review uploaded scorecards and round history.',
                       ),
                       const SizedBox(height: 14),
-                      const MenuCard(
+                      MenuCard(
                         label: 'Upload',
                         subtitle: 'Scan and upload scorecards as players finish each day.',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const _DirectorCameraPage()),
+                          );
+                        },
                       ),
                       const SizedBox(height: 14),
                       const MenuCard(
@@ -185,6 +190,39 @@ class SignInHomePage extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DirectorCameraPage extends StatelessWidget {
+  const _DirectorCameraPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            const Center(
+              child: Icon(
+                Icons.camera_alt,
+                color: Colors.white70,
+                size: 88,
+              ),
+            ),
+            Positioned(
+              top: 10,
+              left: 10,
+              child: IconButton(
+                tooltip: 'Close camera',
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              ),
+            ),
+          ],
         ),
       ),
     );
