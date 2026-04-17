@@ -1,7 +1,26 @@
-import 'package:flutter/material.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-import 'app.dart';
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-void main() {
   runApp(const WorldScoreAIApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'WorldScore AI',
+      home: Scaffold(
+        appBar: AppBar(title: const Text('Firebase Ready')),
+        body: const Center(
+          child: Text('Firebase initialized successfully'),
+        ),
+      ),
+    );
+  }
 }
